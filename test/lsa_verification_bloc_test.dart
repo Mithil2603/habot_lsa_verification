@@ -4,15 +4,15 @@ import 'package:habot_lsa_verification/export.dart';
 class MockTestRemoteDataSource implements ILsaVerificationRemoteDataSource {
   @override
   Future<LsaVerificationResponseModel> postVerification({
-    required Map<String, dynamic> payload,
-    required Map<String, String> headers,
+    required LsaVerificationRequestPayload payload,
+    required LsaVerificationMetadataHeaders headers,
   }) async {
     return LsaVerificationResponseModel(
       statusCode: 200,
       statusMessage: 'Processed successfully',
       verificationId: 'VRF-TEST-888',
-      traceId: headers['trace_id'] ?? 'mock-trace-id',
-      logicHash: headers['logic_hash'] ?? 'mock-logic-hash',
+      traceId: headers.traceId,
+      logicHash: headers.logicHash,
       verifiedAt: DateTime.now().toUtc(),
     );
   }
@@ -55,9 +55,11 @@ void main() {
         expectLater(bloc.stream, emitsInOrder(expectedStates));
 
         bloc.add(const VerifyAndSubmitPressed(
-          lsaId: 'LSA-7049',
-          parentConsentCode: 'AUTH-CODE-123',
-          predecessorId: 'PRED-9982-XYZ',
+          request: LsaVerificationRequestPayload(
+            lsaId: 'LSA-7049',
+            parentConsentCode: 'AUTH-CODE-123',
+            predecessorId: 'PRED-9982-XYZ',
+          ),
         ));
       },
     );
@@ -77,9 +79,11 @@ void main() {
         expectLater(bloc.stream, emitsInOrder(expectedStates));
 
         bloc.add(const VerifyAndSubmitPressed(
-          lsaId: 'LSA-7049',
-          parentConsentCode: 'AUTH-CODE-123',
-          predecessorId: '',
+          request: LsaVerificationRequestPayload(
+            lsaId: 'LSA-7049',
+            parentConsentCode: 'AUTH-CODE-123',
+            predecessorId: '',
+          ),
         ));
       },
     );
@@ -99,9 +103,11 @@ void main() {
         expectLater(bloc.stream, emitsInOrder(expectedStates));
 
         bloc.add(const VerifyAndSubmitPressed(
-          lsaId: '',
-          parentConsentCode: 'AUTH-CODE-123',
-          predecessorId: 'PRED-9982-XYZ',
+          request: LsaVerificationRequestPayload(
+            lsaId: '',
+            parentConsentCode: 'AUTH-CODE-123',
+            predecessorId: 'PRED-9982-XYZ',
+          ),
         ));
       },
     );
@@ -134,9 +140,11 @@ void main() {
       'ResetVerificationState resets state from Quarantined back to LsaVerificationInitial while preserving friction telemetry count',
       () async {
         bloc.add(const VerifyAndSubmitPressed(
-          lsaId: '',
-          parentConsentCode: '',
-          predecessorId: '',
+          request: LsaVerificationRequestPayload(
+            lsaId: '',
+            parentConsentCode: '',
+            predecessorId: '',
+          ),
         ));
         await Future<void>.delayed(const Duration(milliseconds: 50));
         expect(bloc.state, isA<LsaVerificationQuarantined>());

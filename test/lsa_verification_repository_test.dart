@@ -4,13 +4,13 @@ import 'package:habot_lsa_verification/export.dart';
 class SpyLsaVerificationRemoteDataSource
     implements ILsaVerificationRemoteDataSource {
   int callCount = 0;
-  Map<String, dynamic>? lastPayload;
-  Map<String, String>? lastHeaders;
+  LsaVerificationRequestPayload? lastPayload;
+  LsaVerificationMetadataHeaders? lastHeaders;
 
   @override
   Future<LsaVerificationResponseModel> postVerification({
-    required Map<String, dynamic> payload,
-    required Map<String, String> headers,
+    required LsaVerificationRequestPayload payload,
+    required LsaVerificationMetadataHeaders headers,
   }) async {
     callCount++;
     lastPayload = payload;
@@ -20,8 +20,8 @@ class SpyLsaVerificationRemoteDataSource
       statusCode: 200,
       statusMessage: 'Verified successfully',
       verificationId: 'VRF-MOCK-TEST-1',
-      traceId: headers['trace_id'] ?? '',
-      logicHash: headers['logic_hash'] ?? '',
+      traceId: headers.traceId,
+      logicHash: headers.logicHash,
       verifiedAt: DateTime.now().toUtc(),
     );
   }
@@ -58,15 +58,15 @@ void main() {
 
         final injectedHeaders = spyRemoteDataSource.lastHeaders;
         expect(injectedHeaders, isNotNull);
-        expect(injectedHeaders!['trace_id'], isNotEmpty);
-        expect(injectedHeaders['logic_hash'], isNotEmpty);
-        expect(injectedHeaders['logic_hash']!.length, equals(64));
+        expect(injectedHeaders!.traceId, isNotEmpty);
+        expect(injectedHeaders.logicHash, isNotEmpty);
+        expect(injectedHeaders.logicHash.length, equals(64));
 
         final sentPayload = spyRemoteDataSource.lastPayload;
         expect(sentPayload, isNotNull);
-        expect(sentPayload!['predecessor_id'], equals('PRED-9982-XYZ'));
-        expect(sentPayload['lsa_id'], equals('LSA-7049'));
-        expect(sentPayload['parent_consent_code'], equals('PARENT-AUTH-999'));
+        expect(sentPayload!.predecessorId, equals('PRED-9982-XYZ'));
+        expect(sentPayload.lsaId, equals('LSA-7049'));
+        expect(sentPayload.parentConsentCode, equals('PARENT-AUTH-999'));
 
         expect(repository.quarantinedRecords, isEmpty);
       },

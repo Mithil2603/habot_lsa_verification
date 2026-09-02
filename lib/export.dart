@@ -12,6 +12,7 @@ export 'features/lsa_verification/bloc/lsa_verification_event.dart';
 export 'features/lsa_verification/bloc/lsa_verification_state.dart';
 export 'features/lsa_verification/data/datasources/lsa_verification_remote_data_source.dart';
 export 'features/lsa_verification/data/exceptions/security_data_quarantine_exception.dart';
+export 'features/lsa_verification/data/models/lsa_verification_metadata_headers.dart';
 export 'features/lsa_verification/data/models/lsa_verification_request_payload.dart';
 export 'features/lsa_verification/data/models/lsa_verification_response_model.dart';
 export 'features/lsa_verification/data/models/quarantined_security_record.dart';

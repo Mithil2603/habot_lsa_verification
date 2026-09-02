@@ -33,8 +33,6 @@ class LsaVerificationRepository implements ILsaVerificationRepository {
   Future<LsaVerificationResponseModel> verifyLsaSubmission({
     required LsaVerificationRequestPayload payload,
   }) async {
-    final Map<String, dynamic> rawPayloadMap = payload.toMap();
-
     final String? predecessorIdentifier = payload.predecessorId;
     if (predecessorIdentifier == null ||
         predecessorIdentifier.trim().isEmpty ||
@@ -42,7 +40,7 @@ class LsaVerificationRepository implements ILsaVerificationRepository {
       _executeFailClosedRoutine(
         reason:
             'Strict Data Lineage Violation: Mandatory "predecessor_id" is null or empty. Lineage unbroken assertion failed.',
-        rawPayload: rawPayloadMap,
+        payload: payload,
       );
     }
 
@@ -53,7 +51,7 @@ class LsaVerificationRepository implements ILsaVerificationRepository {
       _executeFailClosedRoutine(
         reason:
             'Security Validation Breach: Mandatory "lsa_id" is null or empty.',
-        rawPayload: rawPayloadMap,
+        payload: payload,
       );
     }
 
@@ -64,7 +62,7 @@ class LsaVerificationRepository implements ILsaVerificationRepository {
       _executeFailClosedRoutine(
         reason:
             'Security Validation Breach: Mandatory "parent_consent_code" is null or empty.',
-        rawPayload: rawPayloadMap,
+        payload: payload,
       );
     }
 
@@ -72,46 +70,45 @@ class LsaVerificationRepository implements ILsaVerificationRepository {
       _executeFailClosedRoutine(
         reason:
             'Security Validation Breach: "parent_consent_code" fails minimum entropy requirement (length < 3).',
-        rawPayload: rawPayloadMap,
+        payload: payload,
       );
     }
 
     final String dynamicTraceId = _uuidGenerator.v4();
 
     final String dynamicLogicHash = _computeComplianceLogicHash(
-      payload: rawPayloadMap,
+      payload: payload,
       traceId: dynamicTraceId,
     );
 
-    final Map<String, String> outboundHeaders = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'trace_id': dynamicTraceId,
-      'logic_hash': dynamicLogicHash,
-    };
+    final LsaVerificationMetadataHeaders outboundHeaders =
+        LsaVerificationMetadataHeaders(
+      traceId: dynamicTraceId,
+      logicHash: dynamicLogicHash,
+    );
 
     try {
       final LsaVerificationResponseModel response =
           await _remoteDataSource.postVerification(
-        payload: rawPayloadMap,
+        payload: payload,
         headers: outboundHeaders,
       );
       return response;
     } catch (unexpectedException) {
       _executeFailClosedRoutine(
         reason: 'Remote Transport Exception: ${unexpectedException.toString()}',
-        rawPayload: rawPayloadMap,
+        payload: payload,
       );
     }
   }
 
   String _computeComplianceLogicHash({
-    required Map<String, dynamic> payload,
+    required LsaVerificationRequestPayload payload,
     required String traceId,
   }) {
     const String governanceRuleVersion =
         'HABOT_COMPLIANCE_GOVERNANCE_SPEC_V1.0';
-    final String serializedPayload = jsonEncode(payload);
+    final String serializedPayload = jsonEncode(payload.toMap());
     final String signatureInput =
         '$governanceRuleVersion:$traceId:$serializedPayload';
 
@@ -121,10 +118,11 @@ class LsaVerificationRepository implements ILsaVerificationRepository {
 
   Never _executeFailClosedRoutine({
     required String reason,
-    required Map<String, dynamic> rawPayload,
+    required LsaVerificationRequestPayload payload,
   }) {
     final String quarantineIdentifier =
         'QRNT-${_uuidGenerator.v4().substring(0, 8).toUpperCase()}';
+    final Map<String, dynamic> rawPayload = payload.toMap();
     final String serializedData = jsonEncode(rawPayload);
     final String payloadChecksum =
         sha256.convert(utf8.encode(serializedData)).toString();

@@ -26,12 +26,7 @@ class LsaVerificationBloc
       frictionEventsCount: _frictionTelemetryLog.length,
     ));
 
-    final LsaVerificationRequestPayload request =
-        LsaVerificationRequestPayload(
-      lsaId: event.lsaId,
-      parentConsentCode: event.parentConsentCode,
-      predecessorId: event.predecessorId,
-    );
+    final LsaVerificationRequestPayload request = event.request;
 
     try {
       final LsaVerificationResponseModel response =

@@ -90,11 +90,16 @@ class _VerificationFormCardState extends State<VerificationFormCard> {
       return;
     }
 
+    final LsaVerificationRequestPayload request =
+        LsaVerificationRequestPayload(
+      lsaId: _lsaIdController.text,
+      parentConsentCode: _consentCodeController.text,
+      predecessorId: _predecessorIdController.text,
+    );
+
     context.read<LsaVerificationBloc>().add(
           VerifyAndSubmitPressed(
-            lsaId: _lsaIdController.text,
-            parentConsentCode: _consentCodeController.text,
-            predecessorId: _predecessorIdController.text,
+            request: request,
           ),
         );
   }

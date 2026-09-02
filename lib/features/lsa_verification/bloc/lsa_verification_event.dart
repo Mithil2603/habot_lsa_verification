@@ -8,18 +8,14 @@ abstract class LsaVerificationEvent extends Equatable {
 }
 
 class VerifyAndSubmitPressed extends LsaVerificationEvent {
-  final String lsaId;
-  final String parentConsentCode;
-  final String predecessorId;
+  final LsaVerificationRequestPayload request;
 
   const VerifyAndSubmitPressed({
-    required this.lsaId,
-    required this.parentConsentCode,
-    required this.predecessorId,
+    required this.request,
   });
 
   @override
-  List<Object?> get props => [lsaId, parentConsentCode, predecessorId];
+  List<Object?> get props => [request];
 }
 
 class FrictionEventDetected extends LsaVerificationEvent {

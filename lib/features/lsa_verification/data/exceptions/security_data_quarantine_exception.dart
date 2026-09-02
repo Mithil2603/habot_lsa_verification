@@ -1,24 +1,10 @@
-import 'package:equatable/equatable.dart';
+import 'package:habot_lsa_verification/export.dart';
 
-/// Exception thrown when security or data lineage validation fails.
-///
-/// Under strict data governance, any missing, malformed, or unauthorized
-/// field causes execution to immediately halt (fail-closed) and quarantine
-/// the data locally, aborting all outgoing network calls.
 class SecurityDataQuarantineException extends Equatable implements Exception {
-  /// Unique identifier of the quarantined security event.
   final String quarantineId;
-
-  /// Specific human-readable reason why the payload was quarantined.
   final String reason;
-
-  /// The timestamp when the quarantine routine was triggered.
   final DateTime timestamp;
-
-  /// The raw payload key-value pairs that were quarantined.
   final Map<String, dynamic> quarantinedData;
-
-  /// The cryptographic checksum of the quarantined payload for audit integrity.
   final String integrityChecksum;
 
   SecurityDataQuarantineException({

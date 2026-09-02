@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
-import 'field_label.dart';
+import 'package:habot_lsa_verification/export.dart';
 
-class VerificationFormCard extends StatelessWidget {
+class VerificationFormCard extends StatefulWidget {
   final TextEditingController? lsaIdController;
   final TextEditingController? consentCodeController;
   final TextEditingController? predecessorIdController;
@@ -14,6 +13,91 @@ class VerificationFormCard extends StatelessWidget {
     this.predecessorIdController,
     this.onSubmit,
   });
+
+  @override
+  State<VerificationFormCard> createState() => _VerificationFormCardState();
+}
+
+class _VerificationFormCardState extends State<VerificationFormCard> {
+  late final TextEditingController _lsaIdController;
+  late final TextEditingController _consentCodeController;
+  late final TextEditingController _predecessorIdController;
+
+  final FocusNode _primaryFocusNode = FocusNode();
+  Timer? _frictionTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _lsaIdController = widget.lsaIdController ?? TextEditingController();
+    _consentCodeController =
+        widget.consentCodeController ?? TextEditingController();
+    _predecessorIdController =
+        widget.predecessorIdController ?? TextEditingController();
+
+    _primaryFocusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _frictionTimer?.cancel();
+    _primaryFocusNode.removeListener(_onFocusChange);
+    _primaryFocusNode.dispose();
+
+    if (widget.lsaIdController == null) {
+      _lsaIdController.dispose();
+    }
+    if (widget.consentCodeController == null) {
+      _consentCodeController.dispose();
+    }
+    if (widget.predecessorIdController == null) {
+      _predecessorIdController.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (_primaryFocusNode.hasFocus) {
+      _startFrictionTimer();
+    } else {
+      _frictionTimer?.cancel();
+    }
+  }
+
+  void _onUserInteraction() {
+    _startFrictionTimer();
+  }
+
+  void _startFrictionTimer() {
+    _frictionTimer?.cancel();
+    _frictionTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted && _primaryFocusNode.hasFocus) {
+        context.read<LsaVerificationBloc>().add(
+              FrictionEventDetected(
+                fieldName: 'lsa_id',
+                stallDurationSeconds: 5,
+              ),
+            );
+      }
+    });
+  }
+
+  void _handleSubmit() {
+    _frictionTimer?.cancel();
+
+    if (widget.onSubmit != null) {
+      widget.onSubmit!();
+      return;
+    }
+
+    context.read<LsaVerificationBloc>().add(
+          VerifyAndSubmitPressed(
+            lsaId: _lsaIdController.text,
+            parentConsentCode: _consentCodeController.text,
+            predecessorId: _predecessorIdController.text,
+          ),
+        );
+  }
 
   InputDecoration _inputDecoration(
     BuildContext context, {
@@ -65,116 +149,132 @@ class VerificationFormCard extends StatelessWidget {
     final cardBorderColor =
         isDark ? const Color(0xFF334155) : const Color(0xFFE4E7EC);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: cardBgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cardBorderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Verification Details',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: textColor,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Review the information below before submitting.',
-            style: TextStyle(
-              fontSize: 13,
-              color: secondaryTextColor,
-            ),
-          ),
-          const SizedBox(height: 24),
+    return BlocBuilder<LsaVerificationBloc, LsaVerificationState>(
+      builder: (context, state) {
+        final bool isLoading = state is LsaVerificationInProgress;
 
-          // LSA ID
-          const FieldLabel(label: 'LSA ID', isRequired: true),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: lsaIdController,
-            style: TextStyle(color: textColor),
-            decoration: _inputDecoration(
-              context,
-              hintText: 'Enter LSA ID',
-              prefixIcon: Icons.badge_outlined,
-            ),
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: cardBgColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cardBorderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-
-          // Parent Consent Code
-          const FieldLabel(
-            label: 'Parent Consent Code',
-            isRequired: true,
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: consentCodeController,
-            style: TextStyle(color: textColor),
-            decoration: _inputDecoration(
-              context,
-              hintText: 'Enter consent code',
-              prefixIcon: Icons.key_outlined,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Predecessor ID
-          const FieldLabel(
-            label: 'Predecessor ID',
-            isRequired: true,
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: predecessorIdController,
-            style: TextStyle(color: textColor),
-            decoration: _inputDecoration(
-              context,
-              hintText: 'Enter predecessor ID',
-              prefixIcon: Icons.account_tree_outlined,
-            ),
-          ),
-          const SizedBox(height: 28),
-
-          // Submit button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: onSubmit ?? () {},
-              icon: const Icon(Icons.verified_outlined, size: 20),
-              label: const Text(
-                'Verify & Submit',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Verification Details',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
+                  color: textColor,
                 ),
               ),
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                backgroundColor: const Color(0xFF3157D5),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+              const SizedBox(height: 6),
+              Text(
+                'Review the information below before submitting.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: secondaryTextColor,
                 ),
               ),
-            ),
+              const SizedBox(height: 24),
+              const FieldLabel(label: 'LSA ID', isRequired: true),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _lsaIdController,
+                focusNode: _primaryFocusNode,
+                onChanged: (_) => _onUserInteraction(),
+                enabled: !isLoading,
+                style: TextStyle(color: textColor),
+                decoration: _inputDecoration(
+                  context,
+                  hintText: 'Enter LSA ID',
+                  prefixIcon: Icons.badge_outlined,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const FieldLabel(
+                label: 'Parent Consent Code',
+                isRequired: true,
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _consentCodeController,
+                enabled: !isLoading,
+                style: TextStyle(color: textColor),
+                decoration: _inputDecoration(
+                  context,
+                  hintText: 'Enter consent code',
+                  prefixIcon: Icons.key_outlined,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const FieldLabel(
+                label: 'Predecessor ID',
+                isRequired: true,
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _predecessorIdController,
+                enabled: !isLoading,
+                style: TextStyle(color: textColor),
+                decoration: _inputDecoration(
+                  context,
+                  hintText: 'Enter predecessor ID',
+                  prefixIcon: Icons.account_tree_outlined,
+                ),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: isLoading ? null : _handleSubmit,
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.verified_outlined, size: 20),
+                  label: Text(
+                    isLoading ? 'Verifying Lineage...' : 'Verify & Submit',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: const Color(0xFF3157D5),
+                    disabledBackgroundColor:
+                        const Color(0xFF3157D5).withValues(alpha: 0.6),
+                    foregroundColor: Colors.white,
+                    disabledForegroundColor: Colors.white70,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

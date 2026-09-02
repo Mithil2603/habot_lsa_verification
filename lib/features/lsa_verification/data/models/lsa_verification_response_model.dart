@@ -1,6 +1,5 @@
-import 'package:equatable/equatable.dart';
+import 'package:habot_lsa_verification/export.dart';
 
-/// Concrete response model representing the server response after successful verification.
 class LsaVerificationResponseModel extends Equatable {
   final int statusCode;
   final String statusMessage;
@@ -21,7 +20,8 @@ class LsaVerificationResponseModel extends Equatable {
   factory LsaVerificationResponseModel.fromMap(Map<String, dynamic> map) {
     return LsaVerificationResponseModel(
       statusCode: (map['status_code'] as num?)?.toInt() ?? 200,
-      statusMessage: map['status_message'] as String? ?? 'Verified successfully',
+      statusMessage:
+          map['status_message'] as String? ?? 'Verified successfully',
       verificationId: map['verification_id'] as String? ?? '',
       traceId: map['trace_id'] as String? ?? '',
       logicHash: map['logic_hash'] as String? ?? '',

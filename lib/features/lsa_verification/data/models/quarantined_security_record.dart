@@ -1,7 +1,5 @@
-import 'package:equatable/equatable.dart';
+import 'package:habot_lsa_verification/export.dart';
 
-/// Represents a secure, immutable record of quarantined data stored locally
-/// for governance audit trails when a fail-closed routine is triggered.
 class QuarantinedSecurityRecord extends Equatable {
   final String quarantineId;
   final String reason;

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:habot_lsa_verification/export.dart';
 
 class FieldLabel extends StatelessWidget {
   final String label;

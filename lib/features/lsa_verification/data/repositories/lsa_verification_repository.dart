@@ -1,12 +1,4 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
-import 'package:uuid/uuid.dart';
-
-import '../datasources/lsa_verification_remote_data_source.dart';
-import '../exceptions/security_data_quarantine_exception.dart';
-import '../models/lsa_verification_request_payload.dart';
-import '../models/lsa_verification_response_model.dart';
-import '../models/quarantined_security_record.dart';
+import 'package:habot_lsa_verification/export.dart';
 
 abstract class ILsaVerificationRepository {
   Future<LsaVerificationResponseModel> verifyLsaSubmission({
@@ -25,9 +17,9 @@ class LsaVerificationRepository implements ILsaVerificationRepository {
   LsaVerificationRepository({
     ILsaVerificationRemoteDataSource? remoteDataSource,
     Uuid? uuidGenerator,
-  }) : _remoteDataSource =
-           remoteDataSource ?? const MockLsaVerificationRemoteDataSource(),
-       _uuidGenerator = uuidGenerator ?? const Uuid();
+  })  : _remoteDataSource =
+            remoteDataSource ?? const MockLsaVerificationRemoteDataSource(),
+        _uuidGenerator = uuidGenerator ?? const Uuid();
 
   @override
   List<QuarantinedSecurityRecord> get quarantinedRecords =>
@@ -99,8 +91,11 @@ class LsaVerificationRepository implements ILsaVerificationRepository {
     };
 
     try {
-      final LsaVerificationResponseModel response = await _remoteDataSource
-          .postVerification(payload: rawPayloadMap, headers: outboundHeaders);
+      final LsaVerificationResponseModel response =
+          await _remoteDataSource.postVerification(
+        payload: rawPayloadMap,
+        headers: outboundHeaders,
+      );
       return response;
     } catch (unexpectedException) {
       _executeFailClosedRoutine(
@@ -131,18 +126,17 @@ class LsaVerificationRepository implements ILsaVerificationRepository {
     final String quarantineIdentifier =
         'QRNT-${_uuidGenerator.v4().substring(0, 8).toUpperCase()}';
     final String serializedData = jsonEncode(rawPayload);
-    final String payloadChecksum = sha256
-        .convert(utf8.encode(serializedData))
-        .toString();
+    final String payloadChecksum =
+        sha256.convert(utf8.encode(serializedData)).toString();
 
     final QuarantinedSecurityRecord quarantineRecord =
         QuarantinedSecurityRecord(
-          quarantineId: quarantineIdentifier,
-          reason: reason,
-          rawPayload: rawPayload,
-          sha256Checksum: payloadChecksum,
-          quarantinedAt: DateTime.now().toUtc(),
-        );
+      quarantineId: quarantineIdentifier,
+      reason: reason,
+      rawPayload: rawPayload,
+      sha256Checksum: payloadChecksum,
+      quarantinedAt: DateTime.now().toUtc(),
+    );
 
     _quarantineAuditLog.add(quarantineRecord);
 

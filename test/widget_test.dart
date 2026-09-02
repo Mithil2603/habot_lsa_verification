@@ -1,12 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:habot_lsa_verification/core/app_theme.dart';
-import 'package:habot_lsa_verification/main.dart';
+import 'package:habot_lsa_verification/export.dart';
 
 void main() {
-  testWidgets('LSA Verification Screen smoke test, inputs, and theme toggle',
+  testWidgets(
+      'LSA Verification Screen smoke test, inputs, submission, and theme toggle',
       (WidgetTester tester) async {
-    // Reset to light mode initially
     AppTheme.themeModeNotifier.value = ThemeMode.light;
 
     await tester.pumpWidget(const MyApp());
@@ -15,36 +13,38 @@ void main() {
     expect(find.text('LSA Onboarding Gate'), findsOneWidget);
     expect(find.text('Verify & Submit'), findsOneWidget);
 
-    // Verify hint texts
+    expect(find.text('Idle'), findsOneWidget);
+
     expect(find.text('Enter LSA ID'), findsOneWidget);
     expect(find.text('Enter consent code'), findsOneWidget);
     expect(find.text('Enter predecessor ID'), findsOneWidget);
 
-    // Enter text in all fields to verify they are editable
     final textFields = find.byType(TextFormField);
     expect(textFields, findsNWidgets(3));
 
-    await tester.enterText(textFields.at(0), 'MY-LSA-123');
-    await tester.enterText(textFields.at(1), 'CONSENT-456');
-    await tester.enterText(textFields.at(2), 'PRED-789');
+    await tester.enterText(textFields.at(0), 'LSA-7049');
+    await tester.enterText(textFields.at(1), 'AUTH-123');
+    await tester.enterText(textFields.at(2), 'PRED-9982-XYZ');
     await tester.pumpAndSettle();
 
-    expect(find.text('MY-LSA-123'), findsOneWidget);
-    expect(find.text('CONSENT-456'), findsOneWidget);
-    expect(find.text('PRED-789'), findsOneWidget);
+    expect(find.text('LSA-7049'), findsOneWidget);
+    expect(find.text('AUTH-123'), findsOneWidget);
+    expect(find.text('PRED-9982-XYZ'), findsOneWidget);
 
-    // Verify dark mode toggle button exists
+    await tester.tap(find.text('Verify & Submit'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verified & Lineage Proven (HTTP 200)'), findsOneWidget);
+
     expect(find.byIcon(Icons.dark_mode_rounded), findsOneWidget);
 
-    // Tap dark mode toggle
     await tester.tap(find.byIcon(Icons.dark_mode_rounded));
     await tester.pumpAndSettle();
 
-    // Verify switched to light mode toggle icon
     expect(AppTheme.themeModeNotifier.value, ThemeMode.dark);
     expect(find.byIcon(Icons.light_mode_rounded), findsOneWidget);
 
-    // Tap light mode toggle
     await tester.tap(find.byIcon(Icons.light_mode_rounded));
     await tester.pumpAndSettle();
 

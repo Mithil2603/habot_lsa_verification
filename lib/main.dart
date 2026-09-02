@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:habot_lsa_verification/core/app_theme.dart';
-import 'package:habot_lsa_verification/features/lsa_verification/presentation/lsa_verification_screen.dart';
+import 'package:habot_lsa_verification/export.dart';
 
 void main() {
   runApp(const MyApp());

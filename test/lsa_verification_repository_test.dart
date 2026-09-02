@@ -1,11 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:habot_lsa_verification/features/lsa_verification/data/datasources/lsa_verification_remote_data_source.dart';
-import 'package:habot_lsa_verification/features/lsa_verification/data/exceptions/security_data_quarantine_exception.dart';
-import 'package:habot_lsa_verification/features/lsa_verification/data/models/lsa_verification_request_payload.dart';
-import 'package:habot_lsa_verification/features/lsa_verification/data/models/lsa_verification_response_model.dart';
-import 'package:habot_lsa_verification/features/lsa_verification/data/repositories/lsa_verification_repository.dart';
+import 'package:habot_lsa_verification/export.dart';
 
-/// Spy remote data source to verify network call interactions and headers.
 class SpyLsaVerificationRemoteDataSource
     implements ILsaVerificationRemoteDataSource {
   int callCount = 0;
@@ -44,9 +39,6 @@ void main() {
   });
 
   group('LsaVerificationRepository - Strict Data Governance Tests', () {
-    // -------------------------------------------------------------------------
-    // TEST CASE 1: Valid Submission
-    // -------------------------------------------------------------------------
     test(
       'Test Case 1 (Valid Submission): Returns HTTP 200/Success after proving metadata headers (trace_id, logic_hash) are injected and predecessor_id is present',
       () async {
@@ -58,44 +50,35 @@ void main() {
 
         final response = await repository.verifyLsaSubmission(payload: payload);
 
-        // Assert network call occurred exactly once
         expect(spyRemoteDataSource.callCount, equals(1));
-
-        // Assert response attributes
         expect(response.statusCode, equals(200));
         expect(response.verificationId, isNotEmpty);
         expect(response.traceId, isNotEmpty);
         expect(response.logicHash, isNotEmpty);
 
-        // Verify injected metadata headers
         final injectedHeaders = spyRemoteDataSource.lastHeaders;
         expect(injectedHeaders, isNotNull);
         expect(injectedHeaders!['trace_id'], isNotEmpty);
         expect(injectedHeaders['logic_hash'], isNotEmpty);
-        expect(injectedHeaders['logic_hash']!.length, equals(64)); // SHA-256 length
+        expect(injectedHeaders['logic_hash']!.length, equals(64));
 
-        // Verify lineage is preserved in payload
         final sentPayload = spyRemoteDataSource.lastPayload;
         expect(sentPayload, isNotNull);
         expect(sentPayload!['predecessor_id'], equals('PRED-9982-XYZ'));
         expect(sentPayload['lsa_id'], equals('LSA-7049'));
         expect(sentPayload['parent_consent_code'], equals('PARENT-AUTH-999'));
 
-        // Verify no quarantine records were logged
         expect(repository.quarantinedRecords, isEmpty);
       },
     );
 
-    // -------------------------------------------------------------------------
-    // TEST CASE 2: Missing Lineage
-    // -------------------------------------------------------------------------
     test(
       'Test Case 2 (Missing Lineage): Halts execution and triggers fail-closed when predecessor_id is null or empty',
       () async {
         const nullPredecessorPayload = LsaVerificationRequestPayload(
           lsaId: 'LSA-7049',
           parentConsentCode: 'PARENT-AUTH-999',
-          predecessorId: null, // Null Lineage
+          predecessorId: null,
         );
 
         expect(
@@ -115,10 +98,7 @@ void main() {
           ),
         );
 
-        // Assert no network call was ever initiated
         expect(spyRemoteDataSource.callCount, equals(0));
-
-        // Assert data was quarantined locally with audit trail
         expect(repository.quarantinedRecords.length, equals(1));
         expect(
           repository.quarantinedRecords.first.reason,
@@ -131,15 +111,12 @@ void main() {
       },
     );
 
-    // -------------------------------------------------------------------------
-    // TEST CASE 3: Fail-Closed Error State
-    // -------------------------------------------------------------------------
     test(
       'Test Case 3 (Fail-Closed Error State): Intercepts invalid payload, halts, quarantines data, and surfaces SecurityDataQuarantineException without network call',
       () async {
         const invalidPayload = LsaVerificationRequestPayload(
-          lsaId: '', // Invalid empty LSA ID
-          parentConsentCode: '1', // Invalid short consent code
+          lsaId: '',
+          parentConsentCode: '1',
           predecessorId: 'PRED-VALID-001',
         );
 
@@ -160,10 +137,7 @@ void main() {
           ),
         );
 
-        // Assert network submission path was completely aborted
         expect(spyRemoteDataSource.callCount, equals(0));
-
-        // Assert local quarantine log contains the incident
         expect(repository.quarantinedRecords.length, equals(1));
         final quarantinedRecord = repository.quarantinedRecords.first;
         expect(quarantinedRecord.reason, contains('Security Validation Breach'));

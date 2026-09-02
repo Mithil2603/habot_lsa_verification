@@ -1,6 +1,5 @@
-import 'package:equatable/equatable.dart';
+import 'package:habot_lsa_verification/export.dart';
 
-/// Concrete data transfer model representing the inbound LSA verification request payload.
 class LsaVerificationRequestPayload extends Equatable {
   final String? lsaId;
   final String? parentConsentCode;
